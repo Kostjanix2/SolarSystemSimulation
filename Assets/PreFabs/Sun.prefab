@@ -14,9 +14,10 @@ GameObject:
   - component: {fileID: 4439943957322645749}
   - component: {fileID: 4439943957322645746}
   - component: {fileID: 4439943957322645745}
+  - component: {fileID: 4439943955808257966}
   m_Layer: 0
   m_Name: Sun
-  m_TagString: Untagged
+  m_TagString: SpaceObjects
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -43,7 +44,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4439943957322645748}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4711208715938537054, guid: a6e67e9f6f33ca749bb88b4f6ea36f2b, type: 3}
 --- !u!23 &4439943957322645750
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -111,8 +112,8 @@ Light:
   m_Type: 2
   m_Shape: 0
   m_Color: {r: 1, g: 0.97596425, b: 0.8443396, a: 1}
-  m_Intensity: 50000
-  m_Range: 500
+  m_Intensity: 80000
+  m_Range: 100000
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -181,3 +182,19 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
+--- !u!54 &4439943955808257966
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4439943957322645748}
+  serializedVersion: 2
+  m_Mass: 330000
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
