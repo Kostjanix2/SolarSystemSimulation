@@ -4,7 +4,7 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Himmelsobjekte
+  - SpaceObjects
   layers:
   - Default
   - TransparentFX
