@@ -470,7 +470,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03d95db674acaaf4ebd9a082ba68bdbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  G: 5000
+  G: 1000
   spaceObjects:
   - {fileID: 41174918}
   - {fileID: 801527376}
@@ -509,7 +509,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03d95db674acaaf4ebd9a082ba68bdbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  G: 20000000
+  G: 100000000
   spaceObjects:
   - {fileID: 1942708590}
   - {fileID: 801527376}
@@ -670,10 +670,10 @@ TrailRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Time: 200
+  m_Time: 10
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 15
+    widthMultiplier: 10
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -691,7 +691,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 0, b: 0.5271044, a: 1}
+      key0: {r: 0.4811321, g: 0.4811321, b: 0.4811321, a: 1}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
