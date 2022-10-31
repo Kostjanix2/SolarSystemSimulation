@@ -34,9 +34,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _CellDensity: 12
+    - _FlareSpeed: 4
     - _QueueControl: 0
     - _QueueOffset: 0
-    m_Colors: []
+    - _SolarFlare: 20
+    m_Colors:
+    - _CellColor: {r: 23.870235, g: 14.75406, b: 2.5896957, a: 0}
+    - _SunColor: {r: 7.9193597, g: 5.3916397, b: 0.33619907, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &1314480748762851712
 MonoBehaviour:
