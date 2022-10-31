@@ -6,12 +6,11 @@ public class CalculateGravitation : MonoBehaviour
 {
     [SerializeField]
     private float G = 0.01f;
+    [SerializeField]
     private GameObject[] spaceObjects;
 
     void Awake()
     {
-        spaceObjects = GameObject.FindGameObjectsWithTag("SpaceObjects");
-
         foreach (var obj1 in spaceObjects)
         {
             Vector3 velocityVector3 = Vector3.zero;
