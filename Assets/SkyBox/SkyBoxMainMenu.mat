@@ -52,7 +52,7 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     m_Colors:
-    - Color_A6E2D31: {r: 0, g: 0, b: 0, a: 1}
+    - Color_A6E2D31: {r: 0.09607513, g: 0.106815346, b: 0.16037738, a: 1}
     - Color_ABAAA51A: {r: 0.073231526, g: 0.023495909, b: 0.1509434, a: 1}
     - Color_F47E0F4F: {r: 8, g: 6.235572, b: 4.188679, a: 0}
     - Vector2_7235102: {r: 0.0001, g: 0.001, b: 0, a: 0}
