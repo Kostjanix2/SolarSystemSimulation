@@ -26,7 +26,7 @@ public class CalculateGravitation : MonoBehaviour
                 velocityVector3 += velocity * obj1.transform.right;
             }
 
-            obj1.GetComponent<Rigidbody>().velocity = velocityVector3;
+            obj1.GetComponent<Rigidbody>().velocity += velocityVector3;
         }
 
     }
