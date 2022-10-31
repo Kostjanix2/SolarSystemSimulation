@@ -8,8 +8,7 @@ public class CalculateGravitation : MonoBehaviour
     private float G = 0.01f;
     private GameObject[] spaceObjects;
 
-    // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         spaceObjects = GameObject.FindGameObjectsWithTag("SpaceObjects");
 
