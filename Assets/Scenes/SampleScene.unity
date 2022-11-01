@@ -526,7 +526,7 @@ Transform:
   m_GameObject: {fileID: 775216954}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1100, y: 100, z: 1100}
+  m_LocalScale: {x: 1100, y: 1200, z: 1100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -906,9 +906,33 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7184525430495668087, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -5495902117074765545, guid: 5526bee6be25e314aa4240ea2542c2a3, type: 3}
+    - target: {fileID: 7358465107875291001, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
+      propertyPath: InitialModule.size3D
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7358465107875291001, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 7358465107875291001, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
       propertyPath: VelocityModule.orbitalZ.scalar
       value: -0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 7358465107875291001, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
+      propertyPath: InitialModule.startSize.minScalar
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7358465107875291001, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7358465107875291001, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
+      propertyPath: InitialModule.startSpeed.minMaxState
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7feab9c9885340b49b10aecd88a5a995, type: 3}
