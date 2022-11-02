@@ -1,0 +1,6 @@
+ToDos:
+ - Rotation of Planets
+ - sparkling Milkyway Skybox
+ - Player- and Cameracontroller
+ - Random events like:
+    - meteors hitting planet
