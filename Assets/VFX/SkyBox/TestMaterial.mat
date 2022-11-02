@@ -53,9 +53,9 @@ Material:
     m_Floats:
     - _Angle: 20
     - _Float: 1
-    - _FunkelPower: 4
-    - _FunkelSpeed: 0.1
-    - _Power: 3
+    - _FunkelPower: 5
+    - _FunkelSpeed: 0.02
+    - _Power: 2.2
     - _QueueControl: 0
     - _QueueOffset: 0
     - _cell: 10
