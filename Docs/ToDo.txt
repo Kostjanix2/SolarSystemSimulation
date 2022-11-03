@@ -2,7 +2,7 @@ ToDos:
  - Rotation of Planets
  - Atmoshpere urp shader : https://www.youtube.com/watch?v=bFWM8vJZQ_0
  - Better Saturn Rings
- - Wormhole mechanics : https://www.youtube.com/watch?v=eujfez6W53E Sucking | https://unionassets.com/blog/the-effect-of-the-gravitational-lens-195 True Lens Effect
+ - Wormhole mechanics : https://www.youtube.com/watch?v=eujfez6W53E Sucking | https://www.youtube.com/watch?v=Yk8Rmf0ehHU True Lens Effect
  - Player- and Cameracontroller
   - Little Rocket?
  - Random events like:
