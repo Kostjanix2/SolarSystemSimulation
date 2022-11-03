@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.009489448, g: 0.008862971, b: 0.009691636, a: 1}
+  m_IndirectSpecularColor: {r: 0.009527411, g: 0.008916844, b: 0.009757178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -481,6 +481,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1243217194713928127, guid: 5c3efb55c97aa1245a028d1a8f2b452f, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 18ff3390ba5d65d42bd41b02bdf2942a, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5c3efb55c97aa1245a028d1a8f2b452f, type: 3}
 --- !u!1001 &2386752077274048157
@@ -490,6 +494,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2386752077512782240, guid: 4e40f273d8dced24793ee69468f002cd, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: bd6f63454d1909248b38e5ff333c9226, type: 2}
     - target: {fileID: 2386752077512782242, guid: 4e40f273d8dced24793ee69468f002cd, type: 3}
       propertyPath: m_RootOrder
       value: 8
@@ -929,6 +937,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4108211157761299092, guid: df3baef0ef4dc3245ba7bc202598a075, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 0bc89ba79522293459a2599cfa8bf310, type: 2}
     - target: {fileID: 4108211157761299094, guid: df3baef0ef4dc3245ba7bc202598a075, type: 3}
       propertyPath: m_Name
       value: Saturn
