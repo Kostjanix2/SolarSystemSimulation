@@ -34,7 +34,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTexture:
-        m_Texture: {fileID: 2800000, guid: 3800f1f00789eda45ba9b07d5bf0eb2e, type: 3}
+        m_Texture: {fileID: 2800000, guid: 2c7c0067216bd5344af70c6900c95844, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -51,16 +51,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Angle: 20
+    - _Angle: 20.48
     - _Float: 1
     - _FunkelPower: 5
-    - _FunkelSpeed: 0.02
-    - _Power: 2.2
+    - _FunkelSpeed: 0.1
+    - _Power: 6
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _cell: 10
+    - _cell: 4
     m_Colors:
-    - _Color: {r: 21.486855, g: 34.19971, b: 43.382984, a: 0}
+    - _Color: {r: 1.988154, g: 2.860367, b: 3.4833775, a: 0}
     - _OFfset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Tiling: {r: 1, g: 0.5, b: 0, a: 0}
