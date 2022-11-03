@@ -1,6 +1,10 @@
 ToDos:
  - Rotation of Planets
- - sparkling Milkyway Skybox
+ - Atmoshpere urp shader : https://www.youtube.com/watch?v=bFWM8vJZQ_0
+ - Better Saturn Rings
+ - Wormhole mechanics?
  - Player- and Cameracontroller
+  - Little Rocket?
  - Random events like:
     - meteors hitting planet
+    - Universe exploding? 
