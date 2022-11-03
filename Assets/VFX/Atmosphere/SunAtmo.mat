@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: JupiterAtmo
+  m_Name: SunAtmo
   m_Shader: {fileID: -6465566751694194690, guid: 1de653911b2299a49a8bfe642a200ff8, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -52,5 +52,5 @@ Material:
     - _QueueOffset: 0
     - _RimIntensity: 2
     m_Colors:
-    - _AtmoColor: {r: 0.14150941, g: 0.10068779, b: 0.0727572, a: 0.57254905}
+    - _AtmoColor: {r: 2.7169812, g: 1.2274275, b: 0.52545387, a: 1}
   m_BuildTextureStacks: []
