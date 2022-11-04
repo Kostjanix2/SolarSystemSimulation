@@ -3,9 +3,13 @@ ToDos:
  - Realistic Atmoshpere : https://www.youtube.com/watch?v=bFWM8vJZQ_0
  - Better Saturn Rings
  - Wormhole mechanics : https://www.youtube.com/watch?v=Yk8Rmf0ehHU True Lens Effect
- - Player- and Cameracontroller
- - Little Rocket
- - Satellite's
+ - Player- and Cameracontroller:
+    - Little Rocket
+    - Satellite's
+ 
  - Random events like:
     - meteors hitting planet
     - Universe exploding 
+    
+ - Optional:
+   -  - Realistic Atmoshpere : https://www.youtube.com/watch?v=bFWM8vJZQ_0
