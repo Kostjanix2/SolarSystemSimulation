@@ -1,10 +1,15 @@
 ToDos:
  - Rotation of Planets
- - Atmoshpere urp shader : https://www.youtube.com/watch?v=bFWM8vJZQ_0
+ - Realistic Atmoshpere : https://www.youtube.com/watch?v=bFWM8vJZQ_0
  - Better Saturn Rings
- - Wormhole mechanics : https://www.youtube.com/watch?v=eujfez6W53E Sucking | https://www.youtube.com/watch?v=Yk8Rmf0ehHU True Lens Effect
- - Player- and Cameracontroller
-  - Little Rocket?
+ - Wormhole mechanics : https://www.youtube.com/watch?v=Yk8Rmf0ehHU True Lens Effect
+ - Player- and Cameracontroller:
+    - Little Rocket
+    - Satellite's
+ 
  - Random events like:
     - meteors hitting planet
-    - Universe exploding? 
+    - Universe exploding 
+    
+ - Optional:
+   -  - Realistic Atmoshpere : https://www.youtube.com/watch?v=bFWM8vJZQ_0
