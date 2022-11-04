@@ -47,10 +47,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AtmoIntensity: 0.1
+    - _AtmoIntensity: 0.2
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _RimBig: 4.98
+    - _RimDelete: 0.8
     - _RimIntensity: 20
+    - _RimSmall: 0
     m_Colors:
-    - _AtmoColor: {r: 0.24041227, g: 0.2213645, b: 2.040403, a: 1}
+    - _AtmoColor: {r: 0.5882353, g: 0.8784314, b: 1.6470588, a: 1}
+    - _SunPos: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []

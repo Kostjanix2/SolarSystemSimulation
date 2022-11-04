@@ -31,7 +31,7 @@ public class BlackHoleEffect : MonoBehaviour
         ratio = 1f / cam.aspect;
     }
 
-    public virtual void OnDisable()
+    private void OnDisable()
     {
         if(_material)
         {
@@ -39,8 +39,26 @@ public class BlackHoleEffect : MonoBehaviour
         }
     }
 
+    Vector3 wtsp;
+    Vector2 pos;
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        
+        if( shader && matieral && blackHole)
+        {
+            wtsp = cam.WorldToScreenPoint(blackHole.position);
+
+            if(wtsp.z > 0)
+            {
+                pos = new Vector2(wtsp.x / cam.pixelWidth, 1 - (wtsp.y / cam.pixelHeight));
+
+                _material.SetVector("_Postion", pos);
+                _material.SetFloat("_Ratio", ratio);
+                _material.SetFloat("_Rad", radius);
+                _material.SetFloat("_Distance", Vector3.Distance(blackHole.position, transform.position));
+
+                Graphics.Blit(source, destination, _material);
+            }
+        }
     }
+
 }
