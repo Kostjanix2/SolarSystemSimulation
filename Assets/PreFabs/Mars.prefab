@@ -111,6 +111,7 @@ GameObject:
   - component: {fileID: 8979331975069424088}
   - component: {fileID: 8979331975069424092}
   - component: {fileID: 2291543673199332823}
+  - component: {fileID: 2043558632}
   m_Layer: 0
   m_Name: Mars
   m_TagString: SpaceObjects
@@ -312,3 +313,18 @@ TrailRenderer:
   m_MinVertexDistance: 0.1
   m_Autodestruct: 0
   m_Emitting: 1
+--- !u!114 &2043558632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8979331975069424087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3520e70ee858e7b43961cf4fd73ad91e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  G: 1e+9
+  moonObject:
+  - {fileID: 0}

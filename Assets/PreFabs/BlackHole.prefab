@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 588159845}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 0.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2500128583890318298}
@@ -88,7 +88,7 @@ VFXRenderer:
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -109,7 +109,7 @@ VFXRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
 --- !u!1 &3049738325462250166
 GameObject:
   m_ObjectHideFlags: 0
@@ -127,7 +127,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1228059073851527674
 Transform:
   m_ObjectHideFlags: 0
@@ -1094,30 +1094,30 @@ ParticleSystem:
         m_Curve:
         - serializedVersion: 3
           time: 0
-          value: 0
-          inSlope: 5.569952
-          outSlope: 5.569952
+          value: 1
+          inSlope: 0.1118574
+          outSlope: 0.1118574
           tangentMode: 0
           weightedMode: 0
-          inWeight: 0
-          outWeight: 0.19621897
+          inWeight: 1
+          outWeight: 0.33333334
         - serializedVersion: 3
-          time: 0.4822146
-          value: 0.9920782
-          inSlope: 0.070667505
-          outSlope: 0.070667505
-          tangentMode: 34
+          time: 0.5146566
+          value: 0.7218056
+          inSlope: -0.92301023
+          outSlope: -0.92301023
+          tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
-          outWeight: 0.33333334
+          outWeight: 0.2538022
         - serializedVersion: 3
           time: 1
           value: 0
-          inSlope: -6.01702
-          outSlope: -6.01702
+          inSlope: -2.8260868
+          outSlope: -2.8260868
           tangentMode: 0
           weightedMode: 0
-          inWeight: 0.08241201
+          inWeight: 0.24787354
           outWeight: 0
         m_PreInfinity: 2
         m_PostInfinity: 2
@@ -4948,7 +4948,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1714226231688147057
 Transform:
   m_ObjectHideFlags: 0
@@ -5027,7 +5027,6 @@ GameObject:
   - component: {fileID: 7604645221381227905}
   - component: {fileID: 8646986599153793397}
   - component: {fileID: 1997350446}
-  - component: {fileID: 1997350447}
   m_Layer: 0
   m_Name: BlackHole
   m_TagString: SpaceObjects
@@ -5044,7 +5043,7 @@ Transform:
   m_GameObject: {fileID: 5217723062058351826}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 40, y: 40, z: 40}
+  m_LocalScale: {x: 500, y: 500, z: 500}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1714226231688147057}
@@ -5078,10 +5077,10 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: bf2d03fe26474d449af3b2638296595e, type: 2}
+  - {fileID: 2100000, guid: 1b6fa5c3ff7655847805ab7bedf694fe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5132,16 +5131,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &1997350447
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5217723062058351826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dd0d07a14674264c8f57a6ea51d1466, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  camera: {fileID: 0}
