@@ -1,462 +1,420 @@
-/*
-MIT License
-
-Copyright (c) 2019 Dimas Leenman
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-Update 1 (25-9-2019): added 2 lines to prevent mie from shining through objects inside the atmosphere
-Update 2 (2-10-2019): made use of HW_PERFORMANCE to improve performance on mobile (reduces number of samples), also added a sun
-Update 3 (5-10-2019): added a license
-Update 4 (28-11-2019): atmosphere now correctly blocks light from the scene passing through, and added an ambient scattering term
-Update 5 (28-11-2019): mouse drag now changes the time of day
-Update 6 (28-11-2019): atmosphere now doesn't use the ray sphere intersect function, meaning it's only one function
-Update 7 (22-12-2019): Compacted the mie and rayleigh parts into a single vec2 + added a basic skylight
-Update 8 (15-5-2020): Added ozone absorption (Can also be used as absorption in general)
-Update 9 (6-5-2021): Changed the ozone distribution from 1 / cosh(x) to 1 / (x^2 + 1), and removed the clamp, better integration is planned
-Update 10 (6-5-2021): Changed the integrator to be a bit better, but it might have broken it a bit as well (and it's not 100% done yet)
-Update 11 (18-5-2021): Changed the integrator again, to fix it, because apparently it got worse since last update
-Update 12 (19-5-2021): Found a slight issue at certain view angles backwards, fixed with a simple max
-Update 13 (Planned): Change the integration again, according to seb hillaire: transmittance + total instead of optical depth and total
-                     See Enscape clouds, this hopefully improves the quality
-
-Scattering works by calculating how much light is scattered to the camera on a certain path/
-This implementation does that by taking a number of samples across that path to check the amount of light that reaches the path
-and it calculates the color of this light from the effects of scattering.
-
-There are two types of scattering, rayleigh and mie
-rayleigh is caused by small particles (molecules) and scatters certain colors better than others (causing a blue sky on earth)
-mie is caused by bigger particles (like water droplets), and scatters all colors equally, but only in a certain direction.
-Mie scattering causes the red sky during the sunset, because it scatters the remaining red light
-
-To know where the ray starts and ends, we need to calculate where the ray enters and exits the atmosphere
-We do this using a ray-sphere intersect
-
-The scattering code is based on https://www.scratchapixel.com/lessons/procedural-generation-virtual-worlds/simulating-sky
-with some modifications to allow moving the planet, as well as objects inside the atmosphere, correct light absorbsion
-from objects in the scene and an ambient scattering term tp light up the dark side a bit if needed
-
-the camera also moves up and down, and the sun rotates around the planet as well
-
-Note: 	Because rayleigh is a long word to type, I use ray instead on most variable names
-        the same goes for position (which becomes pos), direction (which becomes dir) and optical (becomes opt)
-*/
-
-// first, lets define some constants to use (planet radius, position, and scattering coefficients)
-#define PLANET_POS vec3(0.0) /* the position of the planet */
-#define PLANET_RADIUS 6371e3 /* radius of the planet */
-#define ATMOS_RADIUS 6471e3 /* radius of the atmosphere */
-// scattering coeffs
-#define RAY_BETA vec3(5.5e-6, 13.0e-6, 22.4e-6) /* rayleigh, affects the color of the sky */
-#define MIE_BETA vec3(21e-6) /* mie, affects the color of the blob around the sun */
-#define AMBIENT_BETA vec3(0.0) /* ambient, affects the scattering color when there is no lighting from the sun */
-#define ABSORPTION_BETA vec3(2.04e-5, 4.97e-5, 1.95e-6) /* what color gets absorbed by the atmosphere (Due to things like ozone) */
-#define G 0.7 /* mie scattering direction, or how big the blob around the sun is */
-// and the heights (how far to go up before the scattering has no effect)
-#define HEIGHT_RAY 8e3 /* rayleigh height */
-#define HEIGHT_MIE 1.2e3 /* and mie */
-#define HEIGHT_ABSORPTION 30e3 /* at what height the absorption is at it's maximum */
-#define ABSORPTION_FALLOFF 4e3 /* how much the absorption decreases the further away it gets from the maximum height */
-// and the steps (more looks better, but is slower)
-// the primary step has the most effect on looks
-#if HW_PERFORMANCE==0
-// edit these if you are on mobile
-#define PRIMARY_STEPS 12 
-#define LIGHT_STEPS 4
-# else
-// and these on desktop
-#define PRIMARY_STEPS 32 /* primary steps, affects quality the most */
-#define LIGHT_STEPS 8 /* light steps, how much steps in the light direction are taken */
-#endif
-
-// camera mode, 0 is on the ground, 1 is in space, 2 is moving, 3 is moving from ground to space
-#define CAMERA_MODE 2
-
-/*
-Next we'll define the main scattering function.
-This traces a ray from start to end and takes a certain amount of samples along this ray, in order to calculate the color.
-For every sample, we'll also trace a ray in the direction of the light,
-because the color that reaches the sample also changes due to scattering
-*/
-vec3 calculate_scattering(
-    vec3 start, 				// the start of the ray (the camera position)
-    vec3 dir, 					// the direction of the ray (the camera vector)
-    float max_dist, 			// the maximum distance the ray can travel (because something is in the way, like an object)
-    vec3 scene_color,			// the color of the scene
-    vec3 light_dir, 			// the direction of the light
-    vec3 light_intensity,		// how bright the light is, affects the brightness of the atmosphere
-    vec3 planet_position, 		// the position of the planet
-    float planet_radius, 		// the radius of the planet
-    float atmo_radius, 			// the radius of the atmosphere
-    vec3 beta_ray, 				// the amount rayleigh scattering scatters the colors (for earth: causes the blue atmosphere)
-    vec3 beta_mie, 				// the amount mie scattering scatters colors
-    vec3 beta_absorption,   	// how much air is absorbed
-    vec3 beta_ambient,			// the amount of scattering that always occurs, cna help make the back side of the atmosphere a bit brighter
-    float g, 					// the direction mie scatters the light in (like a cone). closer to -1 means more towards a single direction
-    float height_ray, 			// how high do you have to go before there is no rayleigh scattering?
-    float height_mie, 			// the same, but for mie
-    float height_absorption,	// the height at which the most absorption happens
-    float absorption_falloff,	// how fast the absorption falls off from the absorption height
-    int steps_i, 				// the amount of steps along the 'primary' ray, more looks better but slower
-    int steps_l 				// the amount of steps along the light ray, more looks better but slower
-) {
-    // add an offset to the camera position, so that the atmosphere is in the correct position
-    start -= planet_position;
-    // calculate the start and end position of the ray, as a distance along the ray
-    // we do this with a ray sphere intersect
-    float a = dot(dir, dir);
-    float b = 2.0 * dot(dir, start);
-    float c = dot(start, start) - (atmo_radius * atmo_radius);
-    float d = (b * b) - 4.0 * a * c;
-
-    // stop early if there is no intersect
-    if (d < 0.0) return scene_color;
-
-    // calculate the ray length
-    vec2 ray_length = vec2(
-        max((-b - sqrt(d)) / (2.0 * a), 0.0),
-        min((-b + sqrt(d)) / (2.0 * a), max_dist)
-    );
-
-    // if the ray did not hit the atmosphere, return a black color
-    if (ray_length.x > ray_length.y) return scene_color;
-    // prevent the mie glow from appearing if there's an object in front of the camera
-    bool allow_mie = max_dist > ray_length.y;
-    // make sure the ray is no longer than allowed
-    ray_length.y = min(ray_length.y, max_dist);
-    ray_length.x = max(ray_length.x, 0.0);
-    // get the step size of the ray
-    float step_size_i = (ray_length.y - ray_length.x) / float(steps_i);
-
-    // next, set how far we are along the ray, so we can calculate the position of the sample
-    // if the camera is outside the atmosphere, the ray should start at the edge of the atmosphere
-    // if it's inside, it should start at the position of the camera
-    // the min statement makes sure of that
-    float ray_pos_i = ray_length.x + step_size_i * 0.5;
-
-    // these are the values we use to gather all the scattered light
-    vec3 total_ray = vec3(0.0); // for rayleigh
-    vec3 total_mie = vec3(0.0); // for mie
-
-    // initialize the optical depth. This is used to calculate how much air was in the ray
-    vec3 opt_i = vec3(0.0);
-
-    // also init the scale height, avoids some vec2's later on
-    vec2 scale_height = vec2(height_ray, height_mie);
-
-    // Calculate the Rayleigh and Mie phases.
-    // This is the color that will be scattered for this ray
-    // mu, mumu and gg are used quite a lot in the calculation, so to speed it up, precalculate them
-    float mu = dot(dir, light_dir);
-    float mumu = mu * mu;
-    float gg = g * g;
-    float phase_ray = 3.0 / (50.2654824574 /* (16 * pi) */) * (1.0 + mumu);
-    float phase_mie = allow_mie ? 3.0 / (25.1327412287 /* (8 * pi) */) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg)) : 0.0;
-
-    // now we need to sample the 'primary' ray. this ray gathers the light that gets scattered onto it
-    for (int i = 0; i < steps_i; ++i) {
-
-        // calculate where we are along this ray
-        vec3 pos_i = start + dir * ray_pos_i;
-
-        // and how high we are above the surface
-        float height_i = length(pos_i) - planet_radius;
-
-        // now calculate the density of the particles (both for rayleigh and mie)
-        vec3 density = vec3(exp(-height_i / scale_height), 0.0);
-
-        // and the absorption density. this is for ozone, which scales together with the rayleigh, 
-        // but absorbs the most at a specific height, so use the sech function for a nice curve falloff for this height
-        // clamp it to avoid it going out of bounds. This prevents weird black spheres on the night side
-        float denom = (height_absorption - height_i) / absorption_falloff;
-        density.z = (1.0 / (denom * denom + 1.0)) * density.x;
-
-        // multiply it by the step size here
-        // we are going to use the density later on as well
-        density *= step_size_i;
-
-        // Add these densities to the optical depth, so that we know how many particles are on this ray.
-        opt_i += density;
-
-        // Calculate the step size of the light ray.
-        // again with a ray sphere intersect
-        // a, b, c and d are already defined
-        a = dot(light_dir, light_dir);
-        b = 2.0 * dot(light_dir, pos_i);
-        c = dot(pos_i, pos_i) - (atmo_radius * atmo_radius);
-        d = (b * b) - 4.0 * a * c;
-
-        // no early stopping, this one should always be inside the atmosphere
-        // calculate the ray length
-        float step_size_l = (-b + sqrt(d)) / (2.0 * a * float(steps_l));
-
-        // and the position along this ray
-        // this time we are sure the ray is in the atmosphere, so set it to 0
-        float ray_pos_l = step_size_l * 0.5;
-
-        // and the optical depth of this ray
-        vec3 opt_l = vec3(0.0);
-
-        // now sample the light ray
-        // this is similar to what we did before
-        for (int l = 0; l < steps_l; ++l) {
-
-            // calculate where we are along this ray
-            vec3 pos_l = pos_i + light_dir * ray_pos_l;
-
-            // the heigth of the position
-            float height_l = length(pos_l) - planet_radius;
-
-            // calculate the particle density, and add it
-            // this is a bit verbose
-            // first, set the density for ray and mie
-            vec3 density_l = vec3(exp(-height_l / scale_height), 0.0);
-
-            // then, the absorption
-            float denom = (height_absorption - height_l) / absorption_falloff;
-            density_l.z = (1.0 / (denom * denom + 1.0)) * density_l.x;
-
-            // multiply the density by the step size
-            density_l *= step_size_l;
-
-            // and add it to the total optical depth
-            opt_l += density_l;
-
-            // and increment where we are along the light ray.
-            ray_pos_l += step_size_l;
-
-        }
-
-        // Now we need to calculate the attenuation
-        // this is essentially how much light reaches the current sample point due to scattering
-        vec3 attn = exp(-beta_ray * (opt_i.x + opt_l.x) - beta_mie * (opt_i.y + opt_l.y) - beta_absorption * (opt_i.z + opt_l.z));
-
-        // accumulate the scattered light (how much will be scattered towards the camera)
-        total_ray += density.x * attn;
-        total_mie += density.y * attn;
-
-        // and increment the position on this ray
-        ray_pos_i += step_size_i;
-
-    }
-
-    // calculate how much light can pass through the atmosphere
-    vec3 opacity = exp(-(beta_mie * opt_i.y + beta_ray * opt_i.x + beta_absorption * opt_i.z));
-
-    // calculate and return the final color
-    return (
-        phase_ray * beta_ray * total_ray // rayleigh color
-        + phase_mie * beta_mie * total_mie // mie
-        + opt_i.x * beta_ambient // and ambient
-        ) * light_intensity + scene_color * opacity; // now make sure the background is rendered correctly
-}
-
-/*
-A ray-sphere intersect
-This was previously used in the atmosphere as well, but it's only used for the planet intersect now, since the atmosphere has this
-ray sphere intersect built in
-*/
-
-vec2 ray_sphere_intersect(
-    vec3 start, // starting position of the ray
-    vec3 dir, // the direction of the ray
-    float radius // and the sphere radius
-) {
-    // ray-sphere intersection that assumes
-    // the sphere is centered at the origin.
-    // No intersection when result.x > result.y
-    float a = dot(dir, dir);
-    float b = 2.0 * dot(dir, start);
-    float c = dot(start, start) - (radius * radius);
-    float d = (b * b) - 4.0 * a * c;
-    if (d < 0.0) return vec2(1e5, -1e5);
-    return vec2(
-        (-b - sqrt(d)) / (2.0 * a),
-        (-b + sqrt(d)) / (2.0 * a)
-    );
-}
-
-/*
-To make the planet we're rendering look nicer, we implemented a skylight function here
-
-Essentially it just takes a sample of the atmosphere in the direction of the surface normal
-*/
-vec3 skylight(vec3 sample_pos, vec3 surface_normal, vec3 light_dir, vec3 background_col) {
-
-    // slightly bend the surface normal towards the light direction
-    surface_normal = normalize(mix(surface_normal, light_dir, 0.6));
-
-    // and sample the atmosphere
-    return calculate_scattering(
-        sample_pos,						// the position of the camera
-        surface_normal, 				// the camera vector (ray direction of this pixel)
-        3.0 * ATMOS_RADIUS, 			// max dist, since nothing will stop the ray here, just use some arbitrary value
-        background_col,					// scene color, just the background color here
-        light_dir,						// light direction
-        vec3(40.0),						// light intensity, 40 looks nice
-        PLANET_POS,						// position of the planet
-        PLANET_RADIUS,                  // radius of the planet in meters
-        ATMOS_RADIUS,                   // radius of the atmosphere in meters
-        RAY_BETA,						// Rayleigh scattering coefficient
-        MIE_BETA,                       // Mie scattering coefficient
-        ABSORPTION_BETA,                // Absorbtion coefficient
-        AMBIENT_BETA,					// ambient scattering, turned off for now. This causes the air to glow a bit when no light reaches it
-        G,                          	// Mie preferred scattering direction
-        HEIGHT_RAY,                     // Rayleigh scale height
-        HEIGHT_MIE,                     // Mie scale height
-        HEIGHT_ABSORPTION,				// the height at which the most absorption happens
-        ABSORPTION_FALLOFF,				// how fast the absorption falls off from the absorption height
-        LIGHT_STEPS, 					// steps in the ray direction
-        LIGHT_STEPS 					// steps in the light direction
-    );
-}
-
-/*
-The following function returns the scene color and depth
-(the color of the pixel without the atmosphere, and the distance to the surface that is visible on that pixel)
-
-in this case, the function renders a green sphere on the place where the planet should be
-color is in .xyz, distance in .w
-
-I won't explain too much about how this works, since that's not the aim of this shader
-*/
-vec4 render_scene(vec3 pos, vec3 dir, vec3 light_dir) {
-
-    // the color to use, w is the scene depth
-    vec4 color = vec4(0.0, 0.0, 0.0, 1e12);
-
-    // add a sun, if the angle between the ray direction and the light direction is small enough, color the pixels white
-    color.xyz = vec3(dot(dir, light_dir) > 0.9998 ? 3.0 : 0.0);
-
-    // get where the ray intersects the planet
-    vec2 planet_intersect = ray_sphere_intersect(pos - PLANET_POS, dir, PLANET_RADIUS);
-
-    // if the ray hit the planet, set the max distance to that ray
-    if (0.0 < planet_intersect.y) {
-        color.w = max(planet_intersect.x, 0.0);
-
-        // sample position, where the pixel is
-        vec3 sample_pos = pos + (dir * planet_intersect.x) - PLANET_POS;
-
-        // and the surface normal
-        vec3 surface_normal = normalize(sample_pos);
-
-        // get the color of the sphere
-        color.xyz = vec3(0.0, 0.25, 0.05);
-
-        // get wether this point is shadowed, + how much light scatters towards the camera according to the lommel-seelinger law
-        vec3 N = surface_normal;
-        vec3 V = -dir;
-        vec3 L = light_dir;
-        float dotNV = max(1e-6, dot(N, V));
-        float dotNL = max(1e-6, dot(N, L));
-        float shadow = dotNL / (dotNL + dotNV);
-
-        // apply the shadow
-        color.xyz *= shadow;
-
-        // apply skylight
-        color.xyz += clamp(skylight(sample_pos, surface_normal, light_dir, vec3(0.0)) * vec3(0.0, 0.25, 0.05), 0.0, 1.0);
-    }
-
-    return color;
-}
-
-/*
-next, we need a way to do something with the scattering function
-
-to do something with it we need the camera vector (which is the ray direction) of the current pixel
-this function calculates it
-*/
-vec3 get_camera_vector(vec3 resolution, vec2 coord) {
-    vec2 uv = coord.xy / resolution.xy - vec2(0.5);
-    uv.x *= resolution.x / resolution.y;
-
-    return normalize(vec3(uv.x, uv.y, -1.0));
-}
-
-/*
-Finally, draw the atmosphere to screen
-
-we first get the camera vector and position, as well as the light dir
-*/
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-
-    // get the camera vector
-    vec3 camera_vector = get_camera_vector(iResolution, fragCoord);
-
-    // get the camera position, switch based on the defines
-#if CAMERA_MODE==0
-    vec3 camera_position = vec3(0.0, PLANET_RADIUS + 100.0, 0.0);
-#endif
-#if CAMERA_MODE==1
-    vec3 camera_position = vec3(0.0, ATMOS_RADIUS, ATMOS_RADIUS);
-#endif
-#if CAMERA_MODE==2
-    vec3 camera_position = vec3(0.0, ATMOS_RADIUS + (-cos(iTime / 2.0) * (ATMOS_RADIUS - PLANET_RADIUS - 1.0)), 0.0);
-#endif
-#if CAMERA_MODE==3
-    float offset = (1.0 - cos(iTime / 2.0)) * ATMOS_RADIUS;
-    vec3 camera_position = vec3(0.0, PLANET_RADIUS + 1.0, offset);
-#endif
-    // get the light direction
-    // also base this on the mouse position, that way the time of day can be changed with the mouse
-    vec3 light_dir = iMouse.y == 0.0 ?
-        normalize(vec3(0.0, cos(-iTime / 8.0), sin(-iTime / 8.0))) :
-        normalize(vec3(0.0, cos(iMouse.y * -5.0 / iResolution.y), sin(iMouse.y * -5.0 / iResolution.y)));
-
-    // get the scene color and depth, color is in xyz, depth in w
-    // replace this with something better if you are using this shader for something else
-    vec4 scene = render_scene(camera_position, camera_vector, light_dir);
-
-    // the color of this pixel
-    vec3 col = vec3(0.0);//scene.xyz;
-
-    // get the atmosphere color
-    col += calculate_scattering(
-        camera_position,				// the position of the camera
-        camera_vector, 					// the camera vector (ray direction of this pixel)
-        scene.w, 						// max dist, essentially the scene depth
-        scene.xyz,						// scene color, the color of the current pixel being rendered
-        light_dir,						// light direction
-        vec3(40.0),						// light intensity, 40 looks nice
-        PLANET_POS,						// position of the planet
-        PLANET_RADIUS,                  // radius of the planet in meters
-        ATMOS_RADIUS,                   // radius of the atmosphere in meters
-        RAY_BETA,						// Rayleigh scattering coefficient
-        MIE_BETA,                       // Mie scattering coefficient
-        ABSORPTION_BETA,                // Absorbtion coefficient
-        AMBIENT_BETA,					// ambient scattering, turned off for now. This causes the air to glow a bit when no light reaches it
-        G,                          	// Mie preferred scattering direction
-        HEIGHT_RAY,                     // Rayleigh scale height
-        HEIGHT_MIE,                     // Mie scale height
-        HEIGHT_ABSORPTION,				// the height at which the most absorption happens
-        ABSORPTION_FALLOFF,				// how fast the absorption falls off from the absorption height 
-        PRIMARY_STEPS, 					// steps in the ray direction 
-        LIGHT_STEPS 					// steps in the light direction
-    );
-
-    // apply exposure, removing this makes the brighter colors look ugly
-    // you can play around with removing this
-    col = 1.0 - exp(-col);
-
-
-    // Output to screen
-    fragColor = vec4(col, 1.0);
+Shader "KelvinvanHoorn/SMBH_Finished"
+{
+	Properties
+	{
+		_DiscTex("Disc texture", 2D) = "white" {}
+		_DiscWidth("Width of the accretion disc", float) = 0.1
+		_DiscOuterRadius("Object relative disc outer radius", Range(0,1)) = 1
+		_DiscInnerRadius("Object relative disc inner radius", Range(0,1)) = 0.25
+		_DiscSpeed("Disc rotation speed", float) = 2
+		[HDR]_DiscColor("Disc main color", Color) = (1,0,0,1)
+		_DopplerBeamingFactor("Doppler beaming effect factor", float) = 66
+		_HueRadius("Hue shift start radius", Range(0,1)) = 0.75
+		_HueShiftFactor("Hue shifting factor", float) = -0.03
+		_Steps("Amount of steps", int) = 256
+		_StepSize("Step size", Range(0.001, 200)) = 0.1
+		_SSRadius("Object relative Schwarzschild radius", Range(0,1)) = 0.1
+		_GConst("Gravitational constant", float) = 0.3
+	}
+		SubShader
+		{
+			Tags { "RenderType" = "Transparent" "RenderPipeline" = "UniversalRenderPipeline" "Queue" = "Transparent" }
+			Cull Front
+
+			Pass
+			{
+				HLSLPROGRAM
+				#pragma vertex vert
+				#pragma fragment frag
+
+				#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+				#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"       
+
+				static const float maxFloat = 3.402823466e+38;
+
+				struct Attributes
+				{
+					float4 posOS	: POSITION;
+				};
+
+				struct v2f
+				{
+					float4 posCS		: SV_POSITION;
+					float3 posWS		: TEXCOORD0;
+
+					float3 centre		: TEXCOORD1;
+					float3 objectScale	: TEXCOORD2;
+				};
+
+				v2f vert(Attributes IN)
+				{
+					v2f OUT = (v2f)0;
+
+					VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.posOS.xyz);
+
+					OUT.posCS = vertexInput.positionCS;
+					OUT.posWS = vertexInput.positionWS;
+
+					// Object information, based upon Unity's shadergraph library functions
+					OUT.centre = UNITY_MATRIX_M._m03_m13_m23;
+					OUT.objectScale = float3(length(float3(UNITY_MATRIX_M[0].x, UNITY_MATRIX_M[1].x, UNITY_MATRIX_M[2].x)),
+								 length(float3(UNITY_MATRIX_M[0].y, UNITY_MATRIX_M[1].y, UNITY_MATRIX_M[2].y)),
+								 length(float3(UNITY_MATRIX_M[0].z, UNITY_MATRIX_M[1].z, UNITY_MATRIX_M[2].z)));
+
+					return OUT;
+				}
+
+				float _DiscWidth;
+				float _DiscOuterRadius;
+				float _DiscInnerRadius;
+
+				Texture2D<float4> _DiscTex;
+				SamplerState sampler_DiscTex;
+				float4 _DiscTex_ST;
+
+				float _DiscSpeed;
+
+				float4 _DiscColor;
+				float _DopplerBeamingFactor;
+				float _HueRadius;
+				float _HueShiftFactor;
+
+				int _Steps;
+				float _StepSize;
+
+				float _SSRadius;
+				float _GConst;
+
+				// Based upon https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/#:~:text=When%20the%20ray%20and%20sphere,equations%20and%20solving%20for%20t.
+				// Returns dstToSphere, dstThroughSphere
+				// If inside sphere, dstToSphere will be 0
+				// If ray misses sphere, dstToSphere = max float value, dstThroughSphere = 0
+				// Given rayDir must be normalized
+				float2 intersectSphere(float3 rayOrigin, float3 rayDir, float3 centre, float radius) {
+
+					float3 offset = rayOrigin - centre;
+					const float a = 1;
+					float b = 2 * dot(offset, rayDir);
+					float c = dot(offset, offset) - radius * radius;
+
+					float discriminant = b * b - 4 * a * c;
+					// No intersections: discriminant < 0
+					// 1 intersection: discriminant == 0
+					// 2 intersections: discriminant > 0
+					if (discriminant > 0) {
+						float s = sqrt(discriminant);
+						float dstToSphereNear = max(0, (-b - s) / (2 * a));
+						float dstToSphereFar = (-b + s) / (2 * a);
+
+						if (dstToSphereFar >= 0) {
+							return float2(dstToSphereNear, dstToSphereFar - dstToSphereNear);
+						}
+					}
+					// Ray did not intersect sphere
+					return float2(maxFloat, 0);
+				}
+
+				// Based upon https://mrl.cs.nyu.edu/~dzorin/rend05/lecture2.pdf
+				float2 intersectInfiniteCylinder(float3 rayOrigin, float3 rayDir, float3 cylinderOrigin, float3 cylinderDir, float cylinderRadius)
+				{
+					float3 a0 = rayDir - dot(rayDir, cylinderDir) * cylinderDir;
+					float a = dot(a0,a0);
+
+					float3 dP = rayOrigin - cylinderOrigin;
+					float3 c0 = dP - dot(dP, cylinderDir) * cylinderDir;
+					float c = dot(c0,c0) - cylinderRadius * cylinderRadius;
+
+					float b = 2 * dot(a0, c0);
+
+					float discriminant = b * b - 4 * a * c;
+
+					if (discriminant > 0) {
+						float s = sqrt(discriminant);
+						float dstToNear = max(0, (-b - s) / (2 * a));
+						float dstToFar = (-b + s) / (2 * a);
+
+						if (dstToFar >= 0) {
+							return float2(dstToNear, dstToFar - dstToNear);
+						}
+					}
+					return float2(maxFloat, 0);
+				}
+
+				// Based upon https://mrl.cs.nyu.edu/~dzorin/rend05/lecture2.pdf
+				float intersectInfinitePlane(float3 rayOrigin, float3 rayDir, float3 planeOrigin, float3 planeDir)
+				{
+					float a = 0;
+					float b = dot(rayDir, planeDir);
+					float c = dot(rayOrigin, planeDir) - dot(planeDir, planeOrigin);
+
+					float discriminant = b * b - 4 * a * c;
+
+					return -c / b;
+				}
+
+				// Based upon https://mrl.cs.nyu.edu/~dzorin/rend05/lecture2.pdf
+				float intersectDisc(float3 rayOrigin, float3 rayDir, float3 p1, float3 p2, float3 discDir, float discRadius, float innerRadius)
+				{
+					float discDst = maxFloat;
+					float2 cylinderIntersection = intersectInfiniteCylinder(rayOrigin, rayDir, p1, discDir, discRadius);
+					float cylinderDst = cylinderIntersection.x;
+
+					if (cylinderDst < maxFloat)
+					{
+						float finiteC1 = dot(discDir, rayOrigin + rayDir * cylinderDst - p1);
+						float finiteC2 = dot(discDir, rayOrigin + rayDir * cylinderDst - p2);
+
+						// Ray intersects with edges of the cylinder/disc
+						if (finiteC1 > 0 && finiteC2 < 0 && cylinderDst > 0)
+						{
+							discDst = cylinderDst;
+						}
+						else
+						{
+							float radiusSqr = discRadius * discRadius;
+							float innerRadiusSqr = innerRadius * innerRadius;
+
+							float p1Dst = max(intersectInfinitePlane(rayOrigin, rayDir, p1, discDir), 0);
+							float3 q1 = rayOrigin + rayDir * p1Dst;
+							float p1q1DstSqr = dot(q1 - p1, q1 - p1);
+
+							// Ray intersects with lower plane of cylinder/disc
+							if (p1Dst > 0 && p1q1DstSqr < radiusSqr && p1q1DstSqr > innerRadiusSqr)
+							{
+								if (p1Dst < discDst)
+								{
+									discDst = p1Dst;
+								}
+							}
+
+							float p2Dst = max(intersectInfinitePlane(rayOrigin, rayDir, p2, discDir), 0);
+							float3 q2 = rayOrigin + rayDir * p2Dst;
+							float p2q2DstSqr = dot(q2 - p2, q2 - p2);
+
+							// Ray intersects with upper plane of cylinder/disc
+							if (p2Dst > 0 && p2q2DstSqr < radiusSqr && p2q2DstSqr > innerRadiusSqr)
+							{
+								if (p2Dst < discDst)
+								{
+									discDst = p2Dst;
+								}
+							}
+						}
+					}
+
+					return discDst;
+				}
+
+				float remap(float v, float minOld, float maxOld, float minNew, float maxNew) {
+					return minNew + (v - minOld) * (maxNew - minNew) / (maxOld - minOld);
+				}
+
+				float2 discUV(float3 planarDiscPos, float3 discDir, float3 centre, float radius)
+				{
+					float3 planarDiscPosNorm = normalize(planarDiscPos);
+					float sampleDist01 = length(planarDiscPos) / radius;
+
+					float3 tangentTestVector = float3(1,0,0);
+					if (abs(dot(discDir, tangentTestVector)) >= 1)
+						tangentTestVector = float3(0,1,0);
+
+					float3 tangent = normalize(cross(discDir, tangentTestVector));
+					float3 biTangent = cross(tangent, discDir);
+					float phi = atan2(dot(planarDiscPosNorm, tangent), dot(planarDiscPosNorm, biTangent)) / PI;
+					phi = remap(phi, -1, 1, 0, 1);
+
+					// Radial distance
+					float u = sampleDist01;
+					// Angular distance
+					float v = phi;
+
+					return float2(u,v);
+				}
+
+				// Based upon UnityCG.cginc, used in hdrIntensity 
+				float3 LinearToGammaSpace(float3 linRGB)
+				{
+					linRGB = max(linRGB, float3(0.f, 0.f, 0.f));
+					// An almost-perfect approximation from http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
+					return max(1.055h * pow(linRGB, 0.416666667h) - 0.055h, 0.h);
+				}
+
+				// Based upon UnityCG.cginc, used in hdrIntensity 
+				float3 GammaToLinearSpace(float3 sRGB)
+				{
+					// Approximate version from http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
+					return sRGB * (sRGB * (sRGB * 0.305306011f + 0.682171111f) + 0.012522878f);
+				}
+
+				// Based upon https://forum.unity.com/threads/how-to-change-hdr-colors-intensity-via-shader.531861/
+				float3 hdrIntensity(float3 emissiveColor, float intensity)
+				{
+					// if not using gamma color space, convert from linear to gamma
+					#ifndef UNITY_COLORSPACE_GAMMA
+					emissiveColor.rgb = LinearToGammaSpace(emissiveColor.rgb);
+					#endif
+					// apply intensity exposure
+					emissiveColor.rgb *= pow(2.0, intensity);
+					// if not using gamma color space, convert back to linear
+					#ifndef UNITY_COLORSPACE_GAMMA
+					emissiveColor.rgb = GammaToLinearSpace(emissiveColor.rgb);
+					#endif
+
+					return emissiveColor;
+				}
+
+				// Based upon Unity's shadergraph library functions
+				float3 RGBToHSV(float3 c)
+				{
+					float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+					float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+					float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+					float d = q.x - min(q.w, q.y);
+					float e = 1.0e-10;
+					return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+				}
+
+				// Based upon Unity's shadergraph library functions
+				float3 HSVToRGB(float3 c)
+				{
+					float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+					float3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
+					return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
+				}
+
+				// Based upon Unity's shadergraph library functions
+				float3 RotateAboutAxis(float3 In, float3 Axis, float Rotation)
+				{
+					float s = sin(Rotation);
+					float c = cos(Rotation);
+					float one_minus_c = 1.0 - c;
+
+					Axis = normalize(Axis);
+					float3x3 rot_mat =
+					{   one_minus_c * Axis.x * Axis.x + c, one_minus_c * Axis.x * Axis.y - Axis.z * s, one_minus_c * Axis.z * Axis.x + Axis.y * s,
+						one_minus_c * Axis.x * Axis.y + Axis.z * s, one_minus_c * Axis.y * Axis.y + c, one_minus_c * Axis.y * Axis.z - Axis.x * s,
+						one_minus_c * Axis.z * Axis.x - Axis.y * s, one_minus_c * Axis.y * Axis.z + Axis.x * s, one_minus_c * Axis.z * Axis.z + c
+					};
+					return mul(rot_mat,  In);
+				}
+
+				float3 discColor(float3 baseColor, float3 planarDiscPos, float3 discDir, float3 cameraPos, float u, float radius)
+				{
+					float3 newColor = baseColor;
+
+					// Distance intensity fall-off
+					float intensity = remap(u, 0, 1, 0.5, -1.2);
+					intensity *= abs(intensity);
+
+					// Doppler beaming intensity change
+					float3 rotatePos = RotateAboutAxis(planarDiscPos, discDir, 0.01);
+					float dopplerDistance = (length(rotatePos - cameraPos) - length(planarDiscPos - cameraPos)) / radius;
+					intensity += dopplerDistance * _DiscSpeed * _DopplerBeamingFactor;
+
+					newColor = hdrIntensity(baseColor, intensity);
+
+					// Distance hue shift
+					float3 hueColor = RGBToHSV(newColor);
+					float hueShift = saturate(remap(u, _HueRadius, 1, 0, 1));
+					hueColor.r += hueShift * _HueShiftFactor;
+					newColor = HSVToRGB(hueColor);
+
+					return newColor;
+				}
+
+				float4 frag(v2f IN) : SV_Target
+				{
+					// Initial ray information
+					float3 rayOrigin = _WorldSpaceCameraPos;
+					float3 rayDir = normalize(IN.posWS - _WorldSpaceCameraPos);
+
+					float sphereRadius = 0.5 * min(min(IN.objectScale.x, IN.objectScale.y), IN.objectScale.z);
+					float2 outerSphereIntersection = intersectSphere(rayOrigin, rayDir, IN.centre, sphereRadius);
+
+					// Disc information, direction is objects rotation
+					float3 discDir = normalize(mul(unity_ObjectToWorld, float4(0,1,0,0)).xyz);
+					float3 p1 = IN.centre - 0.5 * _DiscWidth * discDir;
+					float3 p2 = IN.centre + 0.5 * _DiscWidth * discDir;
+					float discRadius = sphereRadius * _DiscOuterRadius;
+					float innerRadius = sphereRadius * _DiscInnerRadius;
+
+					// Ray information
+					float transmittance = 0;
+					float blackHoleMask = 0;
+					float3 samplePos = float3(maxFloat, 0, 0);
+					float3 currentRayPos = rayOrigin + rayDir * outerSphereIntersection.x;
+					float3 currentRayDir = rayDir;
+
+					// Ray intersects with the outer sphere
+					if (outerSphereIntersection.x < maxFloat)
+					{
+						for (int i = 0; i < _Steps; i++)
+						{
+							float3 dirToCentre = IN.centre - currentRayPos;
+							float dstToCentre = length(dirToCentre);
+							dirToCentre /= dstToCentre;
+
+							if (dstToCentre > sphereRadius + _StepSize)
+							{
+								break;
+							}
+
+							float force = _GConst / (dstToCentre * dstToCentre);
+							currentRayDir = normalize(currentRayDir + dirToCentre * force * _StepSize);
+
+							// Move ray forward
+							currentRayPos += currentRayDir * _StepSize;
+
+							float blackHoleDistance = intersectSphere(currentRayPos, currentRayDir, IN.centre, _SSRadius * sphereRadius).x;
+							if (blackHoleDistance <= _StepSize)
+							{
+								blackHoleMask = 1;
+								break;
+							}
+
+							// Check for disc intersection nearby
+							float discDst = intersectDisc(currentRayPos, currentRayDir, p1, p2, discDir, discRadius, innerRadius);
+							if (transmittance < 1 && discDst < _StepSize)
+							{
+								transmittance = 1;
+								samplePos = currentRayPos + currentRayDir * discDst;
+							}
+						}
+					}
+
+					float2 uv = float2(0,0);
+					float3 planarDiscPos = float3(0,0,0);
+					if (samplePos.x < maxFloat)
+					{
+						planarDiscPos = samplePos - dot(samplePos - IN.centre, discDir) * discDir - IN.centre;
+						uv = discUV(planarDiscPos, discDir, IN.centre, discRadius);
+						uv.y += _Time.x * _DiscSpeed;
+					}
+					float texCol = _DiscTex.SampleLevel(sampler_DiscTex, uv * _DiscTex_ST.xy, 0).r;
+
+					float2 screenUV = IN.posCS.xy / _ScreenParams.xy;
+
+					// Ray direction projection
+					float3 distortedRayDir = normalize(currentRayPos - rayOrigin);
+					float4 rayCameraSpace = mul(unity_WorldToCamera, float4(distortedRayDir,0));
+					float4 rayUVProjection = mul(unity_CameraProjection, float4(rayCameraSpace));
+					float2 distortedScreenUV = rayUVProjection.xy + 1 * 0.5;
+
+					// Screen and object edge transitions
+					float edgeFadex = smoothstep(0, 0.25, 1 - abs(remap(screenUV.x, 0, 1, -1, 1)));
+					float edgeFadey = smoothstep(0, 0.25, 1 - abs(remap(screenUV.y, 0, 1, -1, 1)));
+					float t = saturate(remap(outerSphereIntersection.y, sphereRadius, 2 * sphereRadius, 0, 1)) * edgeFadex * edgeFadey;
+					distortedScreenUV = lerp(screenUV, distortedScreenUV, t);
+
+					float3 backgroundCol = SampleSceneColor(distortedScreenUV) * (1 - blackHoleMask);
+
+					float3 discCol = discColor(_DiscColor.rgb, planarDiscPos, discDir, _WorldSpaceCameraPos, uv.x, discRadius);
+
+					transmittance *= texCol * _DiscColor.a;
+					float3 col = lerp(backgroundCol, discCol, transmittance);
+					return float4(col,1);
+				}
+				ENDHLSL
+			}
+		}
 }

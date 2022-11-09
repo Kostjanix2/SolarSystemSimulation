@@ -26,17 +26,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DiscInnerRadius: 0.3
+    - _DiscInnerRadius: 0.409
     - _DiscOuterRadius: 1
     - _DiscSpeed: 2.8
     - _DiscWidth: 0
     - _DopplerBeamingFactor: 40
-    - _GConst: 12
-    - _HueRadius: 0.704
+    - _GConst: 100
+    - _HueRadius: 0.675
     - _HueShiftFactor: -0.03
-    - _SSRadius: 0.1
-    - _StepSize: 1
-    - _Steps: 400
+    - _SSRadius: 0.433
+    - _StepSize: 10
+    - _Steps: 100
     m_Colors:
     - _DiscColor: {r: 15.999998, g: 8.079551, b: 5.2774863, a: 1}
   m_BuildTextureStacks: []
