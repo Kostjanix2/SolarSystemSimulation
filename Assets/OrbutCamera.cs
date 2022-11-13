@@ -21,8 +21,7 @@ public class OrbutCamera : MonoBehaviour
 
     void OnMouseDrag(float r)
     {
-        this.transform.position =
-           target.position + (this.transform.position - target.position).normalized * r;
+        this.transform.position = target.position + (this.transform.position - target.position).normalized * r;
 
         float rotX = Input.GetAxis("Mouse X") * rotSpeed;
         float rotY = Input.GetAxis("Mouse Y") * rotSpeed;
