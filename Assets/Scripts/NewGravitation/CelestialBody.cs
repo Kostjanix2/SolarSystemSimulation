@@ -13,7 +13,7 @@ public class CelestialBody : MonoBehaviour
     float radius = 1f;
 
     [SerializeField]
-    Vector3 initialVelocity;
+    public Vector3 initialVelocity;
 
     Vector3 currentVelocity;
 
