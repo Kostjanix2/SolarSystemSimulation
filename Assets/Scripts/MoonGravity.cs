@@ -9,7 +9,7 @@ public class MoonGravity : MonoBehaviour
     [SerializeField]
     private GameObject[] moonObject;
 
-    void Awake()
+    void Start()
     {
         foreach (var obj1 in moonObject)
         {

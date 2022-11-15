@@ -50,7 +50,11 @@ Material:
     - _AtmoIntensity: 0.1
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _RimIntensity: 20
+    - _RimBig: 1
+    - _RimDelete: 0.8
+    - _RimIntensity: 5
+    - _RimSmall: 0.1
     m_Colors:
-    - _AtmoColor: {r: 0.24041227, g: 0.2213645, b: 2.040403, a: 1}
+    - _AtmoColor: {r: 0.53357273, g: 0.7876484, b: 1.4728833, a: 1}
+    - _SunPos: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
