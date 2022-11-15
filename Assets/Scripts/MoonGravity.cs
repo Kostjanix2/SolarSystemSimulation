@@ -5,7 +5,11 @@ using UnityEngine;
 public class MoonGravity : MonoBehaviour
 {
     [SerializeField]
-    private float G = 0.01f;
+    private float G = 10f;
+
+    [SerializeField]
+    private float GFactor = 6.0f;
+
     [SerializeField]
     private GameObject[] moonObject;
 
@@ -38,7 +42,7 @@ public class MoonGravity : MonoBehaviour
     float CalculateForce(Rigidbody r1, Rigidbody r2)
     {
         // Calculation Gravitational Force of to bodies
-        float force = G * ((r1.mass * r2.mass) / Mathf.Pow(Vector3.Distance(r1.position, r2.position), 2));
+        float force = Mathf.Pow(10, GFactor) * G * ((r1.mass * r2.mass) / Mathf.Pow(Vector3.Distance(r1.position, r2.position), 2));
 
         return force;
     }
@@ -46,7 +50,7 @@ public class MoonGravity : MonoBehaviour
     float CalculateOrbitVelocity(Rigidbody r1, Rigidbody r2)
     {
         // Calculation Gravitational Force of to bodies
-        float velocity = Mathf.Sqrt((G * r2.mass) / Vector3.Distance(r1.position, r2.position));
+        float velocity = Mathf.Sqrt((Mathf.Pow(10, GFactor) * G * r2.mass) / Vector3.Distance(r1.position, r2.position));
 
         return velocity;
     }
