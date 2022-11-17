@@ -120,9 +120,9 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _BlackHole: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Emission: {r: 1.0754716, g: 4, b: 1.298115, a: 0}
+    - _Emission: {r: 3.0941858, g: 4.1781363, b: 3.1678524, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _MainTint: {r: 0, g: 0, b: 0, a: 0}
+    - _MainTint: {r: 1, g: 1, b: 1, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &1475488410178120247

@@ -57,14 +57,14 @@ Material:
     m_Floats:
     - _Angle: 40
     - _Float: 1
-    - _FunkelPower: 5
-    - _FunkelSpeed: 0.03
+    - _FunkelPower: 1.86
+    - _FunkelSpeed: 0.015
     - _Power: 4
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _cell: 20
+    - _cell: 50
     m_Colors:
-    - _Color: {r: 4.012266, g: 5.7265983, b: 6.9667535, a: 0}
+    - _Color: {r: 1.7472867, g: 3.046454, b: 3.9830625, a: 0}
     - _OFfset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Tiling: {r: 1, g: 0.5, b: 0, a: 0}
