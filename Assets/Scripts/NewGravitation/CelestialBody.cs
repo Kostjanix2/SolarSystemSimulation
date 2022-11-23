@@ -48,7 +48,8 @@ public class CelestialBody : MonoBehaviour
 
     public void UpdatePosition(float timeStep)
     {
-        rb.MovePosition(rb.position + currentVelocity * timeStep);
+        if(rb != null)
+            rb.MovePosition(rb.position + currentVelocity * timeStep);
     }
 
     public Rigidbody Rigidbody
