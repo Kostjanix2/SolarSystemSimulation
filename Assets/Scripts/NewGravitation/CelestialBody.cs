@@ -64,7 +64,10 @@ public class CelestialBody : MonoBehaviour
     {
         get
         {
-            return rb.position;
+            if (rb != null)
+                return rb.position;
+            else
+                return Vector3.zero;
         }
     }
 
