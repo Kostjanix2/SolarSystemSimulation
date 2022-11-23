@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ComHdrMat
+  m_Name: KuiperBelt
   m_Shader: {fileID: -6465566751694194690, guid: e0352f1c6e1a6184fa73352d565cea94, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []

@@ -12,6 +12,7 @@ public class MeteorHit : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
     }
+
     private void OnCollisionEnter(Collision collision)
     {
         rb.velocity = Vector3.zero;
